@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: people-counting-db
+    environment:
+      POSTGRES_DB: people_counting
+      POSTGRES_USER: people_user
+      POSTGRES_PASSWORD: people_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: people-counting-backend
+    environment:
+      # DB
+      DB_DSN: postgresql+asyncpg://people_user:people_pass@db:5432/people_counting
+
+      # Camera D4
+      CAMERA_D4_HOST: 172.16.170.35
+      CAMERA_D4_PORT: 80
+      CAMERA_D4_USERNAME: admin
+      CAMERA_D4_PASSWORD: StudioSvetle2024@!
+      CAMERA_D4_CHANNEL: 3
+      CAMERA_D4_ATTACH_CHANNEL: 1
+
+      # Camera D6 (aggiorna HOST, USERNAME, PASSWORD con i valori reali)
+      CAMERA_D6_HOST: 172.16.170.36
+      CAMERA_D6_PORT: 80
+      CAMERA_D6_USERNAME: admin
+      CAMERA_D6_PASSWORD: StudioSvetle2024@!
+      CAMERA_D6_CHANNEL: 5
+      CAMERA_D6_ATTACH_CHANNEL: 1
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
+
