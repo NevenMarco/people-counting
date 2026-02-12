@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     reset_hour: int = 3
     reset_minute: int = 0
 
+    # Password amministratore per la pagina settings
+    admin_password: str = "admin"
+
     class Config:
         env_prefix = ""
         env_file = ".env"

@@ -41,6 +41,13 @@ class PeopleEvent(Base):
     camera: Mapped[Camera] = relationship(back_populates="events")
 
 
+class AdminSettings(Base):
+    __tablename__ = "admin_settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+
 class ResetLog(Base):
     __tablename__ = "reset_log"
 

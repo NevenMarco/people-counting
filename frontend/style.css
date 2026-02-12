@@ -38,6 +38,23 @@ header {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+}
+
+.admin-link:hover {
+  color: var(--accent-color);
+}
+
 h1 {
   font-size: 1.5rem;
   font-weight: 600;
@@ -194,4 +211,122 @@ h1 {
 
 .primary-btn:active {
   transform: scale(0.98);
+}
+
+/* Admin settings page */
+.container-wide {
+  max-width: 560px;
+}
+
+.back-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.back-link:hover {
+  color: var(--accent-color);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-header h2 {
+  margin: 0;
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.admin-form {
+  text-align: left;
+}
+
+.form-section {
+  border: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.form-section legend {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 12px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.text-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  padding: 10px 14px;
+  font-size: 1rem;
+  font-family: var(--font-family);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group.flex-grow {
+  flex: 1;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.error-msg {
+  color: var(--danger-color);
+  font-size: 0.9rem;
+  margin-top: 12px;
+}
+
+.hint {
+  font-size: 0.8rem;
+  margin-top: 16px;
+  margin-bottom: 0;
 }

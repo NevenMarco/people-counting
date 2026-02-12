@@ -126,6 +126,19 @@ class PeopleCountingService:
             )
             session.add(event)
 
+        if delta_exit > 0:
+            state.occupancy = max(0, state.occupancy - delta_exit)
+            event = PeopleEvent(
+                timestamp=now,
+                camera_id=camera.id,
+                direction="USCITA",
+                delta=delta_exit,
+                entered_total=entered_total,
+                exited_total=exited_total,
+                occupancy_after=state.occupancy,
+            )
+            session.add(event)
+
     async def handle_inside_total(
         self,
         session: AsyncSession,
@@ -219,35 +232,27 @@ class PeopleCountingService:
     ) -> None:
         """
         Imposta manualmente il numero totale di presenti.
-        Calcola la differenza necessaria e la applica alla prima camera disponibile (D4).
+        Usa la stessa formula di get_presence_snapshot per il totale attuale
+        e applica la differenza a occupancy_offset.
         """
         now = datetime.utcnow()
-        # Import interno per evitare cicli
-        from .models import Camera, ResetLog
+        from .models import ResetLog
 
-        # Calcola i presenti attuali totali (occupancy + inside_total)
-        current_total = 0
-        for s in self._channels.values():
-            current_total += s.occupancy + s.inside_total
+        # Usa la stessa formula di get_presence_snapshot per coerenza
+        snapshot = self.get_presence_snapshot()
+        current_total = snapshot["presenti_totali"]
 
         diff = target_occupancy - current_total
 
         if diff == 0:
             return
 
-        # Applica la differenza alla prima camera configurata (es. D4) o alla prima disponibile
-        target_channel = self.settings.camera_d4_channel
-        if target_channel not in self._channels:
-            if self._channels:
-                target_channel = next(iter(self._channels))
-            else:
-                return
+        # Applica la correzione su occupancy_offset (unico meccanismo di correzione manuale)
+        self.occupancy_offset += diff
 
-        state = self._channels[target_channel]
-        state.occupancy += diff
-
-        # Log event
+        # Log event (usiamo D4 come riferimento per il log)
         try:
+            target_channel = self.settings.camera_d4_channel
             camera = await session.scalar(
                 select(Camera).where(Camera.api_channel == target_channel)
             )

@@ -35,6 +35,9 @@ services:
       CAMERA_D6_PASSWORD: StudioSvetle2024@!
       CAMERA_D6_CHANNEL: 5
       CAMERA_D6_ATTACH_CHANNEL: 1
+
+      # Password per la pagina impostazioni admin
+      ADMIN_PASSWORD: admin
     depends_on:
       - db
     ports:

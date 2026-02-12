@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Impostazioni | Studio Svetle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container container-wide">
+      <header>
+        <a href="/" class="back-link">&larr; Torna alla dashboard</a>
+        <h1>Impostazioni Admin</h1>
+      </header>
+
+      <div id="login-screen" class="card">
+        <h2>Accedi</h2>
+        <p class="text-secondary">Inserisci la password amministratore</p>
+        <form id="login-form" class="admin-form">
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input type="password" id="admin-password" class="text-input" required placeholder="Password" />
+          </div>
+          <button type="submit" class="primary-btn full-width">Accedi</button>
+        </form>
+        <p id="login-error" class="error-msg hidden"></p>
+      </div>
+
+      <div id="settings-screen" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2>Telecamere</h2>
+            <button id="logout-btn" class="secondary-btn">Esci</button>
+          </div>
+
+          <form id="settings-form" class="admin-form">
+            <fieldset class="form-section">
+              <legend>Camera D4</legend>
+              <div class="form-row">
+                <div class="form-group flex-grow">
+                  <label for="camera_d4_host">Indirizzo IP</label>
+                  <input type="text" id="camera_d4_host" class="text-input" placeholder="172.16.170.35" />
+                </div>
+                <div class="form-group">
+                  <label for="camera_d4_port">Porta</label>
+                  <input type="number" id="camera_d4_port" class="text-input" min="1" max="65535" placeholder="80" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="camera_d4_username">Utente</label>
+                  <input type="text" id="camera_d4_username" class="text-input" placeholder="admin" />
+                </div>
+                <div class="form-group flex-grow">
+                  <label for="camera_d4_password">Password</label>
+                  <input type="password" id="camera_d4_password" class="text-input" placeholder="..." />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section">
+              <legend>Camera D6</legend>
+              <div class="form-row">
+                <div class="form-group flex-grow">
+                  <label for="camera_d6_host">Indirizzo IP</label>
+                  <input type="text" id="camera_d6_host" class="text-input" placeholder="172.16.170.36" />
+                </div>
+                <div class="form-group">
+                  <label for="camera_d6_port">Porta</label>
+                  <input type="number" id="camera_d6_port" class="text-input" min="1" max="65535" placeholder="80" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="camera_d6_username">Utente</label>
+                  <input type="text" id="camera_d6_username" class="text-input" placeholder="admin" />
+                </div>
+                <div class="form-group flex-grow">
+                  <label for="camera_d6_password">Password</label>
+                  <input type="password" id="camera_d6_password" class="text-input" placeholder="..." />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section">
+              <legend>Regole di analisi</legend>
+              <div class="form-group">
+                <label for="rule_area_name">Nome regola area (es. PC-1)</label>
+                <input type="text" id="rule_area_name" class="text-input" placeholder="PC-1" />
+              </div>
+            </fieldset>
+
+            <button type="submit" class="primary-btn full-width">Salva impostazioni</button>
+          </form>
+          <p class="text-secondary hint">Riavvia il backend (Docker) per applicare le modifiche alle telecamere.</p>
+        </div>
+      </div>
+    </div>
+    <script src="settings.js"></script>
+  </body>
+</html>

@@ -8,6 +8,8 @@ import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from .admin_routes import router as admin_router
+from .admin_settings import get_effective_camera_config, load_admin_settings
 from .config import get_settings
 from .db import get_session, init_db
 from .people_subscriber import DahuaPeopleSubscriber, DeviceSource
@@ -68,6 +70,10 @@ async def lifespan(app: FastAPI):
     await init_db()
     async with get_session() as session:
         await people_service.init_from_db(session)
+        db_settings = await load_admin_settings(session)
+
+    # Config effettiva: DB override env
+    effective = get_effective_camera_config(db_settings)
 
     async def totals_handler(api_channel: int, entered: int, exited: int) -> None:
         async with get_session() as session:
@@ -90,21 +96,21 @@ async def lifespan(app: FastAPI):
     sources: list[DeviceSource] = [
         DeviceSource(
             name="D4",
-            host=settings.camera_d4_host,
-            port=settings.camera_d4_port,
-            username=settings.camera_d4_username,
-            password=settings.camera_d4_password,
-            logical_channel=settings.camera_d4_channel,
-            attach_channel=settings.camera_d4_attach_channel,
+            host=effective["camera_d4_host"],
+            port=effective["camera_d4_port"],
+            username=effective["camera_d4_username"],
+            password=effective["camera_d4_password"],
+            logical_channel=effective["camera_d4_channel"],
+            attach_channel=effective["camera_d4_attach_channel"],
         ),
         DeviceSource(
             name="D6",
-            host=settings.camera_d6_host,
-            port=settings.camera_d6_port,
-            username=settings.camera_d6_username,
-            password=settings.camera_d6_password,
-            logical_channel=settings.camera_d6_channel,
-            attach_channel=settings.camera_d6_attach_channel,
+            host=effective["camera_d6_host"],
+            port=effective["camera_d6_port"],
+            username=effective["camera_d6_username"],
+            password=effective["camera_d6_password"],
+            logical_channel=effective["camera_d6_channel"],
+            attach_channel=effective["camera_d6_attach_channel"],
         ),
     ]
 
@@ -142,6 +148,7 @@ app = FastAPI(
 )
 
 app.include_router(api_router)
+app.include_router(admin_router)
 
 # Mount frontend config
 # Check if frontend dir exists
