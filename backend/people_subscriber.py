@@ -104,13 +104,13 @@ class DahuaPeopleSubscriber:
                                 fields = _parse_key_value_block(text)
                                 rule_name = fields.get("summary.RuleName")
 
-                                # Evento di tipo NumberStat: conteggio entrati/usciti
+                                # Evento di tipo NumberStat: conteggio entrati/usciti (del giorno)
                                 if rule_name == "NumberStat":
                                     entered_str = fields.get(
-                                        "summary.EnteredSubtotal.Total"
+                                        "summary.EnteredSubtotal.Today"
                                     )
                                     exited_str = fields.get(
-                                        "summary.ExitedSubtotal.Total"
+                                        "summary.ExitedSubtotal.Today"
                                     )
                                     if (
                                         entered_str is None
@@ -223,9 +223,9 @@ def _parse_key_value_block(text: str) -> dict[str, str]:
     Parsifica un blocco di testo in formato:
       chiave=valore
     con una coppia per riga. Restituisce un dizionario.
-    Esempio dai tuoi log:
-      summary.EnteredSubtotal.Total=15976
-      summary.ExitedSubtotal.Total=27812
+    Esempio:
+      summary.EnteredSubtotal.Today=42
+      summary.ExitedSubtotal.Today=38
     """
     result: dict[str, str] = {}
     for line in text.splitlines():
