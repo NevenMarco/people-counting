@@ -78,6 +78,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const passwordForm = document.getElementById('password-form');
+    const restartBtn = document.getElementById('restart-btn');
+
+    passwordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const current = document.getElementById('current-password').value;
+        const newPwd = document.getElementById('new-password').value;
+        const confirm = document.getElementById('new-password-confirm').value;
+        if (newPwd !== confirm) {
+            alert('Le password non coincidono.');
+            return;
+        }
+        if (newPwd.length < 6) {
+            alert('La password deve avere almeno 6 caratteri.');
+            return;
+        }
+        try {
+            const res = await fetch('/api/admin/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ current_password: current, new_password: newPwd })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.detail || 'Errore.');
+                return;
+            }
+            alert('Password aggiornata.');
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-password-confirm').value = '';
+        } catch (err) {
+            alert('Errore di connessione.');
+        }
+    });
+
+    restartBtn.addEventListener('click', async () => {
+        if (!confirm('Vuoi riavviare il backend? La connessione si interromperà per qualche secondo.')) return;
+        try {
+            const res = await fetch('/api/admin/restart', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.detail || 'Errore riavvio.');
+                return;
+            }
+            alert('Riavvio in corso. La pagina si riconnetterà automaticamente.');
+            setTimeout(() => window.location.reload(), 3000);
+        } catch (err) {
+            alert('Errore di connessione.');
+        }
+    });
+
     settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const payload = {

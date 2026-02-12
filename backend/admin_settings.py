@@ -11,6 +11,7 @@ from .config import get_settings
 from .models import AdminSettings
 
 SETTINGS_KEYS = [
+    "admin_password",  # password admin (override env se impostata)
     "camera_d4_host",
     "camera_d4_port",
     "camera_d4_username",
@@ -21,6 +22,13 @@ SETTINGS_KEYS = [
     "camera_d6_password",
     "rule_area_name",  # es. PC-1
 ]
+
+
+def get_effective_admin_password(db_settings: dict[str, Any] | None) -> str:
+    """Password admin: da DB se impostata, altrimenti da env."""
+    if db_settings and db_settings.get("admin_password"):
+        return str(db_settings["admin_password"])
+    return get_settings().admin_password
 
 
 async def load_admin_settings(session: AsyncSession) -> dict[str, Any]:

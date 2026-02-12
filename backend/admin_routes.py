@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import secrets
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from .admin_settings import load_admin_settings, save_admin_settings, SETTINGS_KEYS
+from .admin_settings import get_effective_admin_password, load_admin_settings, save_admin_settings
 from .config import get_settings
 from .db import get_session
 
@@ -45,8 +45,10 @@ class AdminSettingsSchema(BaseModel):
 @router.post("/login")
 async def admin_login(req: LoginRequest, response: Response):
     """Verifica password e imposta cookie di sessione."""
-    settings = get_settings()
-    if req.password != settings.admin_password:
+    async with get_session() as session:
+        db_data = await load_admin_settings(session)
+    effective_password = get_effective_admin_password(db_data)
+    if req.password != effective_password:
         raise HTTPException(status_code=401, detail="Password errata")
     token = secrets.token_urlsafe(32)
     _admin_tokens.add(token)
@@ -112,3 +114,53 @@ async def put_admin_settings(request: Request, body: AdminSettingsSchema):
         await save_admin_settings(session, data)
 
     return {"status": "ok", "message": "Impostazioni salvate. Riavvia il backend per applicare."}
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.put("/password")
+async def change_admin_password(request: Request, body: ChangePasswordRequest):
+    """Cambia la password admin (solo se autenticato)."""
+    if not _verify_admin(request):
+        raise HTTPException(status_code=401, detail="Autenticazione richiesta")
+
+    async with get_session() as session:
+        db_data = await load_admin_settings(session)
+    effective_password = get_effective_admin_password(db_data)
+
+    if body.current_password != effective_password:
+        raise HTTPException(status_code=400, detail="Password attuale errata")
+
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 6 caratteri")
+
+    async with get_session() as session:
+        await save_admin_settings(session, {"admin_password": body.new_password})
+
+    return {"status": "ok", "message": "Password aggiornata."}
+
+
+@router.post("/restart")
+async def restart_backend(request: Request):
+    """Riavvia il container Docker del backend (solo se autenticato)."""
+    if not _verify_admin(request):
+        raise HTTPException(status_code=401, detail="Autenticazione richiesta")
+
+    try:
+        import docker
+        client = docker.from_env()
+        # Il container name è people-counting-backend (da docker-compose)
+        container_name = os.environ.get("CONTAINER_NAME", "people-counting-backend")
+        container = client.containers.get(container_name)
+        container.restart()
+        return {"status": "ok", "message": "Riavvio in corso..."}
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Riavvio non disponibile: installare docker e montare /var/run/docker.sock",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore riavvio: {str(e)}")

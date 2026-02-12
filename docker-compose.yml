@@ -16,7 +16,10 @@ services:
   backend:
     build: .
     container_name: people-counting-backend
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      CONTAINER_NAME: people-counting-backend
       # DB
       DB_DSN: postgresql+asyncpg://people_user:people_pass@db:5432/people_counting
 

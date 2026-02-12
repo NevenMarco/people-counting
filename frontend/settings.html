@@ -100,6 +100,31 @@
           </form>
           <p class="text-secondary hint">Riavvia il backend (Docker) per applicare le modifiche alle telecamere.</p>
         </div>
+
+        <div class="card" style="margin-top: 24px;">
+          <h2>Password Admin</h2>
+          <form id="password-form" class="admin-form">
+            <div class="form-group">
+              <label for="current-password">Password attuale</label>
+              <input type="password" id="current-password" class="text-input" required placeholder="..." />
+            </div>
+            <div class="form-group">
+              <label for="new-password">Nuova password</label>
+              <input type="password" id="new-password" class="text-input" required minlength="6" placeholder="min. 6 caratteri" />
+            </div>
+            <div class="form-group">
+              <label for="new-password-confirm">Conferma nuova password</label>
+              <input type="password" id="new-password-confirm" class="text-input" required placeholder="..." />
+            </div>
+            <button type="submit" class="primary-btn full-width">Cambia password</button>
+          </form>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+          <h2>Sistema</h2>
+          <p class="text-secondary">Riavvia il container backend per applicare modifiche alle telecamere.</p>
+          <button id="restart-btn" class="primary-btn" style="margin-top: 12px;">Riavvia backend</button>
+        </div>
       </div>
     </div>
     <script src="settings.js"></script>
