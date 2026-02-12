@@ -17,3 +17,6 @@ class PresenceResponse(BaseModel):
     per_camera: List[CameraPresence]
     since_reset: datetime | None = None
 
+
+class SetOccupancyRequest(BaseModel):
+    occupancy: int

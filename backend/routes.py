@@ -2,12 +2,35 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
 
-from .schemas import PresenceResponse, CameraPresence
+from .schemas import PresenceResponse, CameraPresence, SetOccupancyRequest
 from .services import people_service
 from .nvr_client import get_nvr_system_info, get_people_attach_sample
+from .db import get_session
 import httpx
 
 router = APIRouter(prefix="/api", tags=["people-counting"])
+
+
+@router.post("/reset")
+async def reset_occupancy():
+    """
+    Resetta manualmente i contatori di occupazione a 0.
+    """
+    async with get_session() as session:
+        await people_service.reset_occupancy(session, reason="MANUAL_RESET")
+    return {"status": "ok", "message": "Occupancy reset to 0"}
+
+
+@router.post("/set-occupancy")
+async def set_occupancy(req: SetOccupancyRequest):
+    """
+    Imposta manualmente il numero totale di presenti.
+    """
+    async with get_session() as session:
+        await people_service.set_occupancy(
+            session, target_occupancy=req.occupancy, reason="MANUAL_SET"
+        )
+    return {"status": "ok", "message": f"Occupancy set to {req.occupancy}"}
 
 
 @router.get("/presence", response_model=PresenceResponse)
@@ -54,7 +77,7 @@ async def debug_state():
 
 @router.get("/debug/attach-sample")
 async def debug_attach_sample(
-    channel: int = Query(..., description="Numero di canale da sondare (es. 4 o 6)")
+    channel: int = Query(..., description="Numero di canale da sondare (es. 4 o 6)"),
 ):
     """
     Apre per pochi istanti lo stream attach del canale indicato e restituisce
@@ -70,7 +93,3 @@ async def debug_attach_sample(
         )
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=f"NVR attach error: {exc}")
-
-
-
-
