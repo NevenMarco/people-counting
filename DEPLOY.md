@@ -32,7 +32,7 @@ sudo mkdir -p people-counting
 sudo chown $USER:$USER people-counting
 cd people-counting
 
-git clone https://github.com/NevenMarco/people-counting.git .
+git clone https://github.com/Neven-Ai/people-counting.git .
 ```
 
 ## 3. Configura le variabili
