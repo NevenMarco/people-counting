@@ -46,11 +46,34 @@ async def load_admin_settings(session: AsyncSession) -> dict[str, Any]:
     return result
 
 
+def _is_empty_value(val: Any) -> bool:
+    """True if value should be treated as empty (use env default)."""
+    if val is None:
+        return True
+    if isinstance(val, str) and not val.strip():
+        return True
+    return False
+
+
+def _should_use_env_default(key: str, val: Any) -> bool:
+    """True if value should be discarded and env default used instead."""
+    if _is_empty_value(val):
+        return True
+    # Port 0 is invalid for camera connections - use env default
+    if key in ("camera_d4_port", "camera_d6_port") and (val == 0 or val == "0"):
+        return True
+    return False
+
+
 async def save_admin_settings(session: AsyncSession, data: dict[str, Any]) -> None:
-    """Salva le impostazioni nel DB."""
+    """Salva le impostazioni nel DB. Valori vuoti o porta 0 vengono rimossi (si usa env)."""
     for key in SETTINGS_KEYS:
         val = data.get(key)
-        if val is None:
+        if _should_use_env_default(key, val):
+            # Rimuovi eventuale riga esistente: usa default da env
+            row = await session.get(AdminSettings, key)
+            if row:
+                await session.delete(row)
             continue
         if isinstance(val, int):
             val = str(val)
@@ -84,6 +107,14 @@ def get_effective_camera_config(session_result: dict[str, Any] | None) -> dict[s
     }
     if session_result:
         for k, v in session_result.items():
-            if k in out and v is not None:
-                out[k] = v
+            if k not in out:
+                continue
+            # Treat None and empty string as "use env default" - consistent with get_admin_settings
+            if v is None:
+                continue
+            if isinstance(v, str) and not v.strip():
+                continue
+            if k in ("camera_d4_port", "camera_d6_port") and (v == 0 or v == "0"):
+                continue
+            out[k] = v
     return out
