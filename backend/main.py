@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 import os
 
@@ -13,7 +12,6 @@ from .admin_settings import get_effective_camera_config, load_admin_settings
 from .camera_sync import fetch_camera_summary
 from .config import get_settings
 from .db import get_session, init_db
-from .people_subscriber import DahuaPeopleSubscriber, DeviceSource
 from .routes import router as api_router
 from .services import people_service
 
@@ -62,19 +60,12 @@ async def scheduler_loop():
 async def lifespan(app: FastAPI):
     """
     Startup/shutdown FastAPI.
-    - Inizializza DB e stato.
-    - Avvia le subscription verso le telecamere IP.
+    Inizializza DB e stato, avvia polling getSummary ogni secondo.
     """
-    settings = get_settings()
-
     # Init DB and load cameras/state
     await init_db()
     async with get_session() as session:
         await people_service.init_from_db(session)
-        db_settings = await load_admin_settings(session)
-
-    # Config effettiva: DB override env
-    effective = get_effective_camera_config(db_settings)
 
     async def totals_handler(api_channel: int, entered: int, exited: int) -> None:
         async with get_session() as session:
@@ -93,47 +84,16 @@ async def lifespan(app: FastAPI):
                 inside_total=inside_total,
             )
 
-    # Definisci le sorgenti (telecamere IP) da monitorare
-    sources: list[DeviceSource] = [
-        DeviceSource(
-            name="D4",
-            host=effective["camera_d4_host"],
-            port=effective["camera_d4_port"],
-            username=effective["camera_d4_username"],
-            password=effective["camera_d4_password"],
-            logical_channel=effective["camera_d4_channel"],
-            attach_channel=effective["camera_d4_attach_channel"],
-        ),
-        DeviceSource(
-            name="D6",
-            host=effective["camera_d6_host"],
-            port=effective["camera_d6_port"],
-            username=effective["camera_d6_username"],
-            password=effective["camera_d6_password"],
-            logical_channel=effective["camera_d6_channel"],
-            attach_channel=effective["camera_d6_attach_channel"],
-        ),
-    ]
-
-    subscriber = DahuaPeopleSubscriber(
-        totals_handler=totals_handler, inside_handler=inside_handler
-    )
-    await subscriber.start(sources)
-
     logger.info(
-        "People-counting backend started. Monitoring sources: %s",
-        [
-            f"{s.name}@{s.host}:{s.port} (logical_channel={s.logical_channel})"
-            for s in sources
-        ],
+        "People-counting backend started. Single polling via getSummary every 1s."
     )
 
     async def camera_sync_loop():
         """
-        Sincronizza periodicamente last_entered/last_exited con getSummary
-        per allineare lo stato alle telecamere (EnteredSubtotal.Today, ExitedSubtotal.Today).
+        Unica sorgente dati: polling getSummary ogni secondo.
+        Aggiorna last_entered, last_exited, inside_total senza conflitti con stream attach.
         """
-        sync_interval = 30
+        sync_interval = 1
         while True:
             try:
                 async with get_session() as session:
@@ -202,7 +162,6 @@ async def lifespan(app: FastAPI):
     finally:
         scheduler_task.cancel()
         sync_task.cancel()
-        await subscriber.stop()
         try:
             await scheduler_task
         except asyncio.CancelledError:
