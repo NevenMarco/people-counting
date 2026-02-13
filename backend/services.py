@@ -17,7 +17,6 @@ class ChannelState:
     api_channel: int
     last_entered: int = 0
     last_exited: int = 0
-    occupancy: int = 0
     # Numero di persone presenti in area (ManNumDetection / InsideSubtotal.Total)
     inside_total: int = 0
 
@@ -116,8 +115,10 @@ class PeopleCountingService:
 
         now = datetime.utcnow()
 
+        # Totale presenti al momento dell'evento (per storico)
+        total_after = self.get_presence_snapshot()["presenti_totali"]
+
         if delta_enter > 0:
-            state.occupancy += delta_enter
             event = PeopleEvent(
                 timestamp=now,
                 camera_id=camera.id,
@@ -125,12 +126,11 @@ class PeopleCountingService:
                 delta=delta_enter,
                 entered_total=entered_total,
                 exited_total=exited_total,
-                occupancy_after=state.occupancy,
+                occupancy_after=total_after,
             )
             session.add(event)
 
         if delta_exit > 0:
-            state.occupancy = max(0, state.occupancy - delta_exit)
             event = PeopleEvent(
                 timestamp=now,
                 camera_id=camera.id,
@@ -138,7 +138,7 @@ class PeopleCountingService:
                 delta=delta_exit,
                 entered_total=entered_total,
                 exited_total=exited_total,
-                occupancy_after=state.occupancy,
+                occupancy_after=total_after,
             )
             session.add(event)
 
@@ -215,7 +215,7 @@ class PeopleCountingService:
 
     def get_debug_state(self) -> list[dict]:
         """
-        Stato interno per canale: totali grezzi e occupancy.
+        Stato interno per canale: totali grezzi e inside_total.
         Utile per confrontare con i contatori visibili nella GUI Dahua.
         """
         return [
@@ -224,7 +224,6 @@ class PeopleCountingService:
                 "camera": s.camera_name,
                 "last_entered": s.last_entered,
                 "last_exited": s.last_exited,
-                "occupancy": s.occupancy,
                 "inside_total": s.inside_total,
             }
             for ch, s in self._channels.items()

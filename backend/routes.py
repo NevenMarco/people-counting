@@ -71,7 +71,7 @@ async def debug_state():
     Restituisce lo stato interno per canale:
     - api_channel
     - last_entered / last_exited
-    - occupancy calcolato
+    - inside_total
     Così puoi confrontare direttamente con i contatori mostrati nella GUI Dahua.
     """
     return {"channels": people_service.get_debug_state()}
