@@ -149,6 +149,7 @@ async def lifespan(app: FastAPI):
                     password=cfg["camera_d4_password"],
                     channel=cfg["camera_d4_attach_channel"],
                     rule_name=rule_name,
+                    camera_label="D4",
                 )
                 if d4_data:
                     await totals_handler(
@@ -167,6 +168,7 @@ async def lifespan(app: FastAPI):
                     password=cfg["camera_d6_password"],
                     channel=cfg["camera_d6_attach_channel"],
                     rule_name=rule_name,
+                    camera_label="D6",
                 )
                 if d6_data:
                     await totals_handler(
@@ -176,6 +178,13 @@ async def lifespan(app: FastAPI):
                     )
                     if d6_data.get("inside") is not None:
                         await inside_handler(cfg["camera_d6_channel"], d6_data["inside"])
+                elif d4_data:
+                    logger.info(
+                        "Camera sync: D4 ok, D6 nessun dato. Verifica su D6 (host=%s): "
+                        "1) Raggiungibile? 2) Nome regola = '%s'? "
+                        "3) Prova: curl -u user:pass 'http://%s/cgi-bin/videoStatServer.cgi?action=getSummary&channel=1'",
+                        cfg["camera_d6_host"], rule_name, cfg["camera_d6_host"],
+                    )
 
             except asyncio.CancelledError:
                 break

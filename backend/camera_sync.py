@@ -22,38 +22,8 @@ def _parse_key_value(text: str) -> dict[str, str]:
     return result
 
 
-async def fetch_camera_summary(
-    host: str,
-    port: int,
-    username: str,
-    password: str,
-    channel: int = 1,
-    rule_name: str = "Presenti-Reception",
-) -> dict[str, Any] | None:
-    """
-    Chiama getSummary sulla telecamera e restituisce EnteredSubtotal.Today,
-    ExitedSubtotal.Today, InsideSubtotal.Total.
-    Ritorna None in caso di errore.
-    """
-    url = f"http://{host}:{port}/cgi-bin/videoStatServer.cgi"
-    params = {
-        "action": "getSummary",
-        "channel": str(channel),
-        "name": rule_name,
-    }
-    auth = httpx.DigestAuth(username, password)
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(url, params=params, auth=auth)
-            resp.raise_for_status()
-    except Exception as exc:
-        logger.warning("getSummary %s:%s failed: %s", host, port, exc)
-        return None
-
-    fields = _parse_key_value(resp.text)
-
-    # Preferiamo .Today, fallback su .Total
+def _extract_from_fields(fields: dict[str, str]) -> dict[str, Any] | None:
+    """Estrae entered, exited, inside dai campi parsati."""
     entered = fields.get("summary.EnteredSubtotal.Today") or fields.get(
         "summary.EnteredSubtotal.Total"
     )
@@ -61,15 +31,8 @@ async def fetch_camera_summary(
         "summary.ExitedSubtotal.Total"
     )
     inside = fields.get("summary.InsideSubtotal.Total")
-
     if entered is None or exited is None:
-        logger.debug(
-            "getSummary %s:%s: Entered/Exited mancanti, campi: %s",
-            host, port,
-            [k for k in fields if "Entered" in k or "Exited" in k],
-        )
         return None
-
     try:
         return {
             "entered": int(entered),
@@ -78,3 +41,56 @@ async def fetch_camera_summary(
         }
     except ValueError:
         return None
+
+
+async def fetch_camera_summary(
+    host: str,
+    port: int,
+    username: str,
+    password: str,
+    channel: int = 1,
+    rule_name: str = "Presenti-Reception",
+    camera_label: str = "",
+) -> dict[str, Any] | None:
+    """
+    Chiama getSummary sulla telecamera e restituisce EnteredSubtotal.Today,
+    ExitedSubtotal.Today, InsideSubtotal.Total.
+    Se name=rule_name non restituisce dati, prova senza name (solo channel).
+    Ritorna None in caso di errore.
+    """
+    url = f"http://{host}:{port}/cgi-bin/videoStatServer.cgi"
+    auth = httpx.DigestAuth(username, password)
+    label = camera_label or f"{host}:{port}"
+
+    # Prova con name, poi senza (D6 potrebbe avere regola con nome diverso)
+    params_list = [
+        {"action": "getSummary", "channel": str(channel), "name": rule_name},
+        {"action": "getSummary", "channel": str(channel)},
+    ]
+
+    for params in params_list:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(url, params=params, auth=auth)
+                resp.raise_for_status()
+        except Exception as exc:
+            logger.warning(
+                "getSummary %s params=%s failed: %s",
+                label, params, exc,
+            )
+            continue
+
+        fields = _parse_key_value(resp.text)
+        result = _extract_from_fields(fields)
+        if result:
+            return result
+
+        # Log per debug quando fallisce
+        if not result and params.get("name"):
+            logger.info(
+                "getSummary %s (name=%s): Entered/Exited mancanti. Campi: %s",
+                label, rule_name,
+                list(fields.keys())[:20],
+            )
+
+    return None
