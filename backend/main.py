@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .admin_routes import router as admin_router
 from .admin_settings import get_effective_camera_config, load_admin_settings
+from .camera_sync import fetch_camera_summary
 from .config import get_settings
 from .db import get_session, init_db
 from .people_subscriber import DahuaPeopleSubscriber, DeviceSource
@@ -127,16 +128,78 @@ async def lifespan(app: FastAPI):
         ],
     )
 
-    # Avvia scheduler reset
+    async def camera_sync_loop():
+        """
+        Sincronizza periodicamente last_entered/last_exited con getSummary
+        per allineare lo stato alle telecamere (EnteredSubtotal.Today, ExitedSubtotal.Today).
+        """
+        sync_interval = 30
+        while True:
+            try:
+                async with get_session() as session:
+                    db_settings = await load_admin_settings(session)
+                cfg = get_effective_camera_config(db_settings)
+                rule_name = cfg.get("rule_area_name", "Presenti-Reception")
+
+                # D4
+                d4_data = await fetch_camera_summary(
+                    host=cfg["camera_d4_host"],
+                    port=cfg["camera_d4_port"],
+                    username=cfg["camera_d4_username"],
+                    password=cfg["camera_d4_password"],
+                    channel=cfg["camera_d4_attach_channel"],
+                    rule_name=rule_name,
+                )
+                if d4_data:
+                    await totals_handler(
+                        cfg["camera_d4_channel"],
+                        d4_data["entered"],
+                        d4_data["exited"],
+                    )
+                    if d4_data.get("inside") is not None:
+                        await inside_handler(cfg["camera_d4_channel"], d4_data["inside"])
+
+                # D6
+                d6_data = await fetch_camera_summary(
+                    host=cfg["camera_d6_host"],
+                    port=cfg["camera_d6_port"],
+                    username=cfg["camera_d6_username"],
+                    password=cfg["camera_d6_password"],
+                    channel=cfg["camera_d6_attach_channel"],
+                    rule_name=rule_name,
+                )
+                if d6_data:
+                    await totals_handler(
+                        cfg["camera_d6_channel"],
+                        d6_data["entered"],
+                        d6_data["exited"],
+                    )
+                    if d6_data.get("inside") is not None:
+                        await inside_handler(cfg["camera_d6_channel"], d6_data["inside"])
+
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                logger.warning("Camera sync error: %s", exc)
+
+            await asyncio.sleep(sync_interval)
+
+    # Avvia scheduler reset e sync telecamere
     scheduler_task = asyncio.create_task(scheduler_loop(), name="scheduler")
+    sync_task = asyncio.create_task(camera_sync_loop(), name="camera_sync")
 
     try:
         yield
     finally:
         scheduler_task.cancel()
+        sync_task.cancel()
         await subscriber.stop()
         try:
             await scheduler_task
+        except asyncio.CancelledError:
+            pass
+        try:
+            await sync_task
         except asyncio.CancelledError:
             pass
 

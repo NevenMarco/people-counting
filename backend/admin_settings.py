@@ -20,7 +20,7 @@ SETTINGS_KEYS = [
     "camera_d6_port",
     "camera_d6_username",
     "camera_d6_password",
-    "rule_area_name",  # es. PC-1
+    "rule_area_name",  # es. Presenti-Reception
 ]
 
 
@@ -103,7 +103,7 @@ def get_effective_camera_config(session_result: dict[str, Any] | None) -> dict[s
         "camera_d6_password": env.camera_d6_password,
         "camera_d6_channel": env.camera_d6_channel,
         "camera_d6_attach_channel": env.camera_d6_attach_channel,
-        "rule_area_name": "PC-1",
+        "rule_area_name": "Presenti-Reception",
     }
     if session_result:
         for k, v in session_result.items():

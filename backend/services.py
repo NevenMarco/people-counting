@@ -94,15 +94,18 @@ class PeopleCountingService:
             # Ignora canali non configurati
             return
 
-        delta_enter = max(0, entered_total - state.last_entered)
-        delta_exit = max(0, exited_total - state.last_exited)
+        prev_entered = state.last_entered
+        prev_exited = state.last_exited
+
+        # Aggiorna sempre last_entered/last_exited con i valori dalla telecamera (EnteredSubtotal.Today, ExitedSubtotal.Today)
+        state.last_entered = entered_total
+        state.last_exited = exited_total
+
+        delta_enter = max(0, entered_total - prev_entered)
+        delta_exit = max(0, exited_total - prev_exited)
 
         if delta_enter == 0 and delta_exit == 0:
             return
-
-        # Aggiorna stato
-        state.last_entered = entered_total
-        state.last_exited = exited_total
 
         # Query camera id
         camera = await session.scalar(

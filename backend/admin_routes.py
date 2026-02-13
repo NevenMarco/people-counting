@@ -39,7 +39,7 @@ class AdminSettingsSchema(BaseModel):
     camera_d6_port: int = 80
     camera_d6_username: str = ""
     camera_d6_password: str = ""
-    rule_area_name: str = "PC-1"
+    rule_area_name: str = "Presenti-Reception"
 
 
 @router.post("/login")
@@ -99,7 +99,7 @@ async def get_admin_settings(request: Request):
         camera_d6_port=int(data.get("camera_d6_port") or env.camera_d6_port),
         camera_d6_username=data.get("camera_d6_username") or env.camera_d6_username,
         camera_d6_password=data.get("camera_d6_password") or env.camera_d6_password,
-        rule_area_name=data.get("rule_area_name") or "PC-1",
+        rule_area_name=data.get("rule_area_name") or "Presenti-Reception",
     )
 
 

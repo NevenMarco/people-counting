@@ -11,7 +11,7 @@ async def probe():
         {"action": "getSummary", "channel": "1"},
         {"action": "getSummary", "channel": "1", "ruleType": "ManNumDetection"},
         {"action": "getSummary", "channel": "1", "ruleId": "7"},
-        {"action": "getSummary", "channel": "1", "name": "PC-1"},
+        {"action": "getSummary", "channel": "1", "name": "Presenti-Reception"},
     ]
 
     async with httpx.AsyncClient() as client:

@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('camera_d6_port').value = s.camera_d6_port ?? 80;
             document.getElementById('camera_d6_username').value = s.camera_d6_username || '';
             document.getElementById('camera_d6_password').value = s.camera_d6_password || '';
-            document.getElementById('rule_area_name').value = s.rule_area_name || 'PC-1';
+            document.getElementById('rule_area_name').value = s.rule_area_name || 'Presenti-Reception';
         } catch (err) {
             alert('Errore nel caricamento delle impostazioni.');
         }
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             camera_d6_port: parseInt(document.getElementById('camera_d6_port').value, 10) || 80,
             camera_d6_username: document.getElementById('camera_d6_username').value.trim(),
             camera_d6_password: document.getElementById('camera_d6_password').value,
-            rule_area_name: document.getElementById('rule_area_name').value.trim() || 'PC-1'
+            rule_area_name: document.getElementById('rule_area_name').value.trim() || 'Presenti-Reception'
         };
 
         try {

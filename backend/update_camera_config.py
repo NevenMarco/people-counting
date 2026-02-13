@@ -6,7 +6,7 @@ async def update_config():
     url = "http://172.16.170.35/cgi-bin/configManager.cgi"
     auth = httpx.DigestAuth("admin", "StudioSvetle2024@!")
 
-    # 1. Verify it is indeed PC-1
+    # 1. Verify it is indeed Presenti-Reception
     params_get = {"action": "getConfig", "name": "VideoAnalyseRule[0][6].Name"}
 
     async with httpx.AsyncClient() as client:
@@ -15,8 +15,8 @@ async def update_config():
         print(f"Status: {resp.status_code}")
         print(f"Body: {resp.text.strip()}")
 
-        if "PC-1" not in resp.text:
-            print("ABORTING: Index 6 is not PC-1")
+        if "Presenti-Reception" not in resp.text:
+            print("ABORTING: Index 6 is not Presenti-Reception")
             return
 
         # 2. Set ReportInterval=5

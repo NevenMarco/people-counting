@@ -104,19 +104,26 @@ class DahuaPeopleSubscriber:
                                 fields = _parse_key_value_block(text)
                                 rule_name = fields.get("summary.RuleName")
 
-                                # Evento di tipo NumberStat: conteggio entrati/usciti (del giorno)
+                                # Evento di tipo NumberStat: conteggio entrati/usciti
+                                # Preferiamo .Today (giornaliero); fallback su .Total se attach non lo invia
                                 if rule_name == "NumberStat":
                                     entered_str = fields.get(
                                         "summary.EnteredSubtotal.Today"
-                                    )
+                                    ) or fields.get("summary.EnteredSubtotal.Total")
                                     exited_str = fields.get(
                                         "summary.ExitedSubtotal.Today"
-                                    )
+                                    ) or fields.get("summary.ExitedSubtotal.Total")
                                     if (
                                         entered_str is None
                                         or exited_str is None
                                         or self._totals_handler is None
                                     ):
+                                        if entered_str is None or exited_str is None:
+                                            logger.debug(
+                                                "NumberStat %s: campi Entered/Exited mancanti, disponibili: %s",
+                                                src.name,
+                                                [k for k in fields if "Entered" in k or "Exited" in k],
+                                            )
                                         continue
                                     entered = int(entered_str)
                                     exited = int(exited_str)
