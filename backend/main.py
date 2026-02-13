@@ -76,14 +76,6 @@ async def lifespan(app: FastAPI):
                 exited_total=exited,
             )
 
-    async def inside_handler(api_channel: int, inside_total: int) -> None:
-        async with get_session() as session:
-            await people_service.handle_inside_total(
-                session,
-                api_channel=api_channel,
-                inside_total=inside_total,
-            )
-
     logger.info(
         "People-counting backend started. Single polling via getSummary every 1s."
     )
@@ -91,7 +83,7 @@ async def lifespan(app: FastAPI):
     async def camera_sync_loop():
         """
         Unica sorgente dati: polling getSummary ogni secondo.
-        Aggiorna last_entered, last_exited, inside_total senza conflitti con stream attach.
+        Aggiorna solo last_entered e last_exited (nessun inside_total).
         """
         sync_interval = 1
         while True:
@@ -117,8 +109,6 @@ async def lifespan(app: FastAPI):
                         d4_data["entered"],
                         d4_data["exited"],
                     )
-                    if d4_data.get("inside") is not None:
-                        await inside_handler(cfg["camera_d4_channel"], d4_data["inside"])
 
                 # D6
                 d6_data = await fetch_camera_summary(
@@ -136,8 +126,6 @@ async def lifespan(app: FastAPI):
                         d6_data["entered"],
                         d6_data["exited"],
                     )
-                    if d6_data.get("inside") is not None:
-                        await inside_handler(cfg["camera_d6_channel"], d6_data["inside"])
                 elif d4_data:
                     logger.info(
                         "Camera sync: D4 ok, D6 nessun dato. Verifica su D6 (host=%s): "

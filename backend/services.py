@@ -17,8 +17,6 @@ class ChannelState:
     api_channel: int
     last_entered: int = 0
     last_exited: int = 0
-    # Numero di persone presenti in area (ManNumDetection / InsideSubtotal.Total)
-    inside_total: int = 0
 
 
 class PeopleCountingService:
@@ -142,31 +140,10 @@ class PeopleCountingService:
             )
             session.add(event)
 
-    async def handle_inside_total(
-        self,
-        session: AsyncSession,
-        *,
-        api_channel: int,
-        inside_total: int,
-    ) -> None:
-        """
-        Aggiorna il numero di persone presenti in area (InsideSubtotal.Total)
-        per il canale specificato. Non crea eventi di storico per ora.
-        """
-        state = self._channels.get(api_channel)
-        if state is None:
-            return
-
-        state.inside_total = max(0, inside_total)
-
     def get_presence_snapshot(self) -> dict:
         """
-        Ritorna un dizionario con presenti totali calcolati secondo formula:
-        Total = PC1(D4) + [(In_D4 + In_D6) - (Out_D4 + Out_D6)] + Offset
-
-        Per 'per_camera', attribuiamo il conteggio in modo convenzionale:
-        D4 = PC1 + (In_D4 - Out_D4) + Offset
-        D6 = (In_D6 - Out_D6)
+        Ritorna presenti totali calcolati solo da ingressi/uscite:
+        Totale = (In_D4 - Out_D4) + (In_D6 - Out_D6) + occupancy_offset
         """
         d4_ch = self.settings.camera_d4_channel
         d6_ch = self.settings.camera_d6_channel
@@ -174,16 +151,13 @@ class PeopleCountingService:
         d4_val = 0
         d6_val = 0
 
-        # Calcolo componenti D4
+        # Calcolo: solo (In - Out) per canale
         if d4_ch in self._channels:
             s = self._channels[d4_ch]
-            # PC1 + (In - Out)
-            d4_val = s.inside_total + (s.last_entered - s.last_exited)
+            d4_val = s.last_entered - s.last_exited
 
-        # Calcolo componenti D6
         if d6_ch in self._channels:
             s = self._channels[d6_ch]
-            # (In - Out)
             d6_val = s.last_entered - s.last_exited
 
         # Totale formula base
@@ -215,7 +189,7 @@ class PeopleCountingService:
 
     def get_debug_state(self) -> list[dict]:
         """
-        Stato interno per canale: totali grezzi e inside_total.
+        Stato interno per canale: last_entered, last_exited.
         Utile per confrontare con i contatori visibili nella GUI Dahua.
         """
         return [
@@ -224,7 +198,6 @@ class PeopleCountingService:
                 "camera": s.camera_name,
                 "last_entered": s.last_entered,
                 "last_exited": s.last_exited,
-                "inside_total": s.inside_total,
             }
             for ch, s in self._channels.items()
         ]

@@ -71,7 +71,6 @@ async def debug_state():
     Restituisce lo stato interno per canale:
     - api_channel
     - last_entered / last_exited
-    - inside_total
     Così puoi confrontare direttamente con i contatori mostrati nella GUI Dahua.
     """
     return {"channels": people_service.get_debug_state()}
@@ -116,10 +115,8 @@ async def debug_camera_compare():
             "api_channel": api_ch,
             "camera_entered_today": data["entered"] if data else None,
             "camera_exited_today": data["exited"] if data else None,
-            "camera_inside_total": data.get("inside") if data else None,
             "our_last_entered": our.get("last_entered"),
             "our_last_exited": our.get("last_exited"),
-            "our_inside_total": our.get("inside_total"),
             "match": (
                 data and our.get("last_entered") == data["entered"]
                 and our.get("last_exited") == data["exited"]

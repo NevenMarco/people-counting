@@ -23,21 +23,19 @@ def _parse_key_value(text: str) -> dict[str, str]:
 
 
 def _extract_from_fields(fields: dict[str, str]) -> dict[str, Any] | None:
-    """Estrae entered, exited, inside dai campi parsati."""
+    """Estrae entered ed exited dai campi parsati (solo ingressi/uscite)."""
     entered = fields.get("summary.EnteredSubtotal.Today") or fields.get(
         "summary.EnteredSubtotal.Total"
     )
     exited = fields.get("summary.ExitedSubtotal.Today") or fields.get(
         "summary.ExitedSubtotal.Total"
     )
-    inside = fields.get("summary.InsideSubtotal.Total")
     if entered is None or exited is None:
         return None
     try:
         return {
             "entered": int(entered),
             "exited": int(exited),
-            "inside": int(inside) if inside is not None else None,
         }
     except ValueError:
         return None
@@ -54,7 +52,7 @@ async def fetch_camera_summary(
 ) -> dict[str, Any] | None:
     """
     Chiama getSummary sulla telecamera e restituisce EnteredSubtotal.Today,
-    ExitedSubtotal.Today, InsideSubtotal.Total.
+    ExitedSubtotal.Today (solo ingressi/uscite, nessun inside).
     Se name=rule_name non restituisce dati, prova senza name (solo channel).
     Ritorna None in caso di errore.
     """
